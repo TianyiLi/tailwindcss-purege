@@ -1,20 +1,22 @@
 import tw from 'tailwindcss';
-import postcss, { parse } from 'postcss';
-import { writeFileSync } from 'fs';
+import postcss from 'postcss';
+import * as postcss2 from 'postcss';
 import { mergeExtractorSelectors, PurgeCSS } from 'purgecss';
 import purgeFromHTML from 'purgecss-from-html';
-import clean from 'clean-css'
+import clean from 'clean-css';
+import { writeFileSync } from 'fs';
 const baseCss = `
-  @tailwind base;
-  @tailwind components;
-  @tailwind utilities;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 `;
 
+const parse = postcss2.parse
 const baseHTML = `
-  <div class="m-0"></div>
+<div class="m-0"></div>
 `;
-async function main() {
-  const result = await postcss(tw({}))
+async function main({ tailwindConfig = {}, baseCss = '', baseHTML = '' }) {
+  const result = await postcss(tw(tailwindConfig))
     .process(baseCss)
     .then((result) => {
       return result.css;
@@ -33,18 +35,10 @@ async function main() {
   _p.removeUnusedFontFaces();
   _p.removeUnusedKeyframes();
   _p.removeUnusedCSSVariables();
-  const _clean = new clean()
-  writeFileSync('result.css', _clean.minify(root.toString()).styles);
-  // const source = await _p.getPurgedCSS(
-  //   [
-  //     {
-  //       raw: result,
-  //       name: 'test',
-  //     },
-  //   ],
-  //   selectors
-  // );
-  // writeFileSync('result.css', source[0].css);
+  const _clean = new clean();
+  return _clean.minify(root.toString()).styles;
 }
 
-main();
+// main({ baseCss, baseHTML }).then((res) => writeFileSync('result.css', res));
+
+export default main;
