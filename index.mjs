@@ -20,7 +20,6 @@ async function main({ tailwindConfig = {}, baseCss = '', baseHTML = '' }) {
                   { content: baseHTML, extension: '.html' },
                 ])
             })(root, result)
-            console.log('compile css')
           },
         })
       : () => ({
