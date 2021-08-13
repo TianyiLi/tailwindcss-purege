@@ -1,44 +1,41 @@
-import tw from 'tailwindcss';
-import postcss from 'postcss';
-import * as postcss2 from 'postcss';
-import { mergeExtractorSelectors, PurgeCSS } from 'purgecss';
-import purgeFromHTML from 'purgecss-from-html';
-import clean from 'clean-css';
-import { writeFileSync } from 'fs';
-const baseCss = `
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-`;
+import twAot from 'tailwindcss'
+import twJit from 'tailwindcss/lib/jit/processTailwindFeatures.js'
+import postcss from 'postcss'
+import cssnano from 'cssnano'
+import resolveConfig from 'tailwindcss/resolveConfig.js'
 
-const parse = postcss2.parse
-const baseHTML = `
-<div class="m-0"></div>
-`;
 async function main({ tailwindConfig = {}, baseCss = '', baseHTML = '' }) {
-  const result = await postcss(tw(tailwindConfig))
-    .process(baseCss)
+  const resolvedConfig = resolveConfig(tailwindConfig)
+
+  resolvedConfig.mode = 'jit'
+
+  const tw =
+    resolvedConfig.mode === 'jit'
+      ? () => ({
+          postcssPlugin: 'tailwindcss',
+          Once(root, { result }) {
+            twJit.default(({ createContext }) => {
+              return () =>
+                createContext(resolvedConfig, [
+                  { content: baseHTML, extension: '.html' },
+                ])
+            })(root, result)
+            console.log('compile css')
+          },
+        })
+      : () => ({
+          postcssPlugin: 'tailwindcss',
+          plugins: [twAot(() => resolvedConfig)],
+        })
+
+  tw.postcss = true
+  const plugins = [tw, cssnano({ preset: 'default' })]
+  const result = await postcss(plugins)
+    .process(baseCss, { from: undefined })
     .then((result) => {
-      return result.css;
-    });
-  const _p = new PurgeCSS();
-
-  const selectors = mergeExtractorSelectors();
-  const extractors = purgeFromHTML;
-
-  const extractedSelectors = extractors(baseHTML);
-  selectors.merge(extractedSelectors);
-
-  const root = parse(result);
-
-  _p.walkThroughCSS(root, selectors);
-  _p.removeUnusedFontFaces();
-  _p.removeUnusedKeyframes();
-  _p.removeUnusedCSSVariables();
-  const _clean = new clean();
-  return _clean.minify(root.toString()).styles;
+      return result.css
+    })
+  return result
 }
 
-// main({ baseCss, baseHTML }).then((res) => writeFileSync('result.css', res));
-
-export default main;
+export default main

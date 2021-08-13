@@ -11,15 +11,12 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "clean-css": "^5.1.5",
-    "purgecss": "^4.0.3",
-    "purgecss-from-html": "^4.0.3",
+    "cssnano": "^5.0.7",
     "tailwindcss": "^2.2.7"
   },
   "devDependencies": {
     "@babel/core": "^7.15.0",
     "@types/node": "^16.4.13",
-    "babel-jest": "^27.0.6",
     "mocha": "^9.0.3"
   }
 }
